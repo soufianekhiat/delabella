@@ -22,6 +22,8 @@ namespace sdb {
 typedef SCALAR_TYPE		Scalar;
 typedef INTEGER_TYPE	Integer;
 
+struct SDBImpl;
+
 struct SDB
 {
 	struct Vertex;
@@ -113,54 +115,55 @@ struct SDB
 		}
 	};
 
-	static SDB* Create();
-	virtual void Destroy() = 0;
+	void Create();
 
-	virtual void SetErrLog(int(*proc)(void* stream, const char* fmt, ...), void* stream) = 0;
+	void Destroy();
+
+	void SetErrLog(int(*proc)(void* stream, const char* fmt, ...), void* stream);
 
 	// return 0: no output 
 	// negative: all points are colinear, output hull vertices form colinear segment list, no triangles on output
 	// positive: output hull vertices form counter-clockwise ordered segment contour, delaunay and hull triangles are available
 	// if 'y' pointer is null, y coords are treated to be located immediately after every x
 	// if advance_bytes is less than 2*sizeof coordinate type, it is treated as 2*sizeof coordinate type  
-	virtual Integer Triangulate(Integer points, const Scalar* x, const Scalar* y = 0, size_t advance_bytes = 0, Integer stop = -1) = 0;
+	Integer Triangulate(Integer points, const Scalar* x, const Scalar* y = 0, size_t advance_bytes = 0, Integer stop = -1);
 
 	// num of points passed to last call to Triangulate()
-	virtual Integer GetNumInputPoints() const = 0;
+	Integer GetNumInputPoints() const;
 
 	// num of indices returned from last call to Triangulate()
-	virtual Integer GetNumOutputIndices() const = 0;
+	Integer GetNumOutputIndices() const;
 
 	// num of hull faces (non delaunay triangles)
-	virtual Integer GetNumOutputHullFaces() const = 0;
+	Integer GetNumOutputHullFaces() const;
 
 	// num of boundary vertices
-	virtual Integer GetNumBoundaryVerts() const = 0;
+	Integer GetNumBoundaryVerts() const;
 
 	// num of internal vertices
-	virtual Integer GetNumInternalVerts() const = 0;
+	Integer GetNumInternalVerts() const;
 
 	// when called right after Triangulate() / Constrain() / FloodFill() it returns number of triangles,
 	// but if called after Polygonize() it returns number of polygons
-	virtual Integer GetNumPolygons() const = 0;
+	Integer GetNumPolygons() const;
 
-	virtual const Simplex* GetFirstDelaunaySimplex() const = 0; // valid only if Triangulate() > 0
-	virtual const Simplex* GetFirstHullSimplex() const = 0; // valid only if Triangulate() > 0
-	virtual const Vertex*  GetFirstBoundaryVertex() const = 0; // if Triangulate() < 0 it is list, otherwise closed contour! 
-	virtual const Vertex*  GetFirstInternalVertex() const = 0; // valid only if Triangulate() > 0
+	const Simplex* GetFirstDelaunaySimplex() const; // valid only if Triangulate() > 0
+	const Simplex* GetFirstHullSimplex() const; // valid only if Triangulate() > 0
+	const Vertex*  GetFirstBoundaryVertex() const; // if Triangulate() < 0 it is list, otherwise closed contour! 
+	const Vertex*  GetFirstInternalVertex() const; // valid only if Triangulate() > 0
 
 	// given input point index, returns corresponding vertex pointer 
-	virtual const Vertex*  GetVertexByIndex(Integer i) const = 0;
+	const Vertex*  GetVertexByIndex(Integer i) const;
 
 	// insert constraint edges into triangulation, valid only if Triangulate() > 0
-	virtual Integer ConstrainEdges(Integer edges, const Integer* pa, const Integer* pb, size_t advance_bytes) = 0;
+	Integer ConstrainEdges(Integer edges, const Integer* pa, const Integer* pb, size_t advance_bytes);
 
 	// assigns interior / exterior flags to all faces, valid only if Triangulate() > 0
 	// returns number of 'land' faces (they start at GetFirstDelaunaySimplex)
 	// optionally <exterior> pointer is set to the first 'sea' face
 	// if invert is set, outer-most faces will become 'land' (instead of 'sea')
 	// depth controls how many times (0=INF) wave front can pass through constraints rings
-	virtual Integer FloodFill(bool invert, const Simplex** exterior = 0, int depth = 0) = 0;
+	Integer FloodFill(bool invert, const Simplex** exterior = 0, int depth = 0);
 
 	// groups adjacent faces, not separated by constraint edges, built on concyclic vertices into polygons
 	// first 3 vertices of a polygon are all 3 vertices of first face Simplex::v[0], v[1], v[2]
@@ -168,7 +171,7 @@ struct SDB
 	// usefull as preprocessing step before genereating voronoi diagrams 
 	// and as unification step before comparing 2 or more triangulations
 	// valid only if Triangulate() > 0
-	virtual Integer Polygonize(const Simplex* poly[/*GetNumOutputIndices()/3*/] = 0) = 0; 
+	Integer Polygonize(const Simplex* poly[/*GetNumOutputIndices()/3*/] = 0); 
 
 	// GenVoronoiDiagramVerts(), valid only if Triangulate() > 0
 	// it makes sense to call it prior to constraining only
@@ -183,8 +186,7 @@ struct SDB
 	// first P <x>,<y> elements will contain internal points (divisor W=1)
 	// next N <x>,<y> elements will contain edge normals (divisor W=0)
 	// function returns number vertices filled (V) on success, otherwise 0
-	virtual Integer GenVoronoiDiagramVerts(Scalar* x, Scalar* y, size_t advance_bytes = 0) const = 0;
-
+	Integer GenVoronoiDiagramVerts(Scalar* x, Scalar* y, size_t advance_bytes = 0) const;
 
 	// GenVoronoiDiagramEdges(), valid only if Triangulate() > 0
 	// it makes sense to call it prior to constraining only
@@ -198,7 +200,7 @@ struct SDB
 	// every pair of consecutive values in <indices> represent VD edge
 	// there is no guaranteed correspondence between edges order and other data
 	// function returns number of indices filled (I) on success, otherwise 0
-	virtual Integer GenVoronoiDiagramEdges(Integer* indices, size_t advance_bytes = 0) const = 0;
+	Integer GenVoronoiDiagramEdges(Integer* indices, size_t advance_bytes = 0) const;
 
 	// GenVoronoiDiagramPolys() valid only if Triangulate() > 0
 	// it makes sense to call it prior to constraining only
@@ -217,9 +219,11 @@ struct SDB
 	// if both <indices> and <closed_indices> are not null, 
 	// number of closed VD cells indices is written to <closed_indices>
 	// function returns number of indices filled (I) on success, otherwise 0
-	virtual Integer GenVoronoiDiagramPolys(Integer* indices, size_t advance_bytes=0, Integer* closed_indices=0) const = 0;
+	Integer GenVoronoiDiagramPolys(Integer* indices, size_t advance_bytes=0, Integer* closed_indices=0) const;
 
-	virtual void CheckTopology() const = 0;
+	void CheckTopology() const;
+
+	SDBImpl* m_pImpl;
 };
 
 inline const typename SDB::Simplex* SDB::Simplex::StartIterator( SDB::Iterator* it/*not_null*/, int around/*0,1,2*/) const

@@ -1,3 +1,14 @@
+From: https://github.com/soufianekhiat/delabella
+
+SDB: Simple DelaBella
+
+Aiming, Simpler implementation for integration:
+* Less templates
+* Configurable at compile time
+* No C++ interface (no pure function, ...)
+
+Still WIP
+
 # DelaBella
 ## 2D Exact Delaunay triangulation
 <img alt="delabella" src="images/delabella.gif" width=100%>

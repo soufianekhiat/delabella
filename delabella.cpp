@@ -66,9 +66,9 @@ static uint64_t uSec()
 }
 
 
-struct CDelaBella2 : SDB
+struct SDBImpl
 {
-	CDelaBella2() : vert_map(0),
+	SDBImpl() : vert_map(0),
 					vert_alloc(0),
 					face_alloc(0),
 					max_verts(0),
@@ -3825,25 +3825,119 @@ struct CDelaBella2 : SDB
 };
 
 
-SDB *SDB::Create()
+void SDB::Create()
 {
-	SDB *ret = 0;
-	try
-	{
-		ret = new CDelaBella2;
-	}
-	catch (...)
-	{
-		ret = 0;
-	}
-	return ret;
+	m_pImpl = new SDBImpl;
 }
 
+void SDB::Destroy()
+{
+	m_pImpl->Destroy();
+}
 
-const Scalar CDelaBella2::Face::iccerrboundA = ((Scalar(10) + Scalar(96) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits));
+void SDB::SetErrLog( int( *proc )( void* stream, const char* fmt, ... ), void* stream )
+{
+	m_pImpl->SetErrLog( proc, stream );
+}
 
+Integer SDB::Triangulate( Integer points, const Scalar* x, const Scalar* y, size_t advance_bytes, Integer stop )
+{
+	return m_pImpl->Triangulate( points, x, y, advance_bytes, stop );
+}
 
-const Scalar CDelaBella2::Vert::resulterrbound = (Scalar(3) + Scalar(8) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits);
+Integer SDB::GetNumInputPoints() const
+{
+	return m_pImpl->GetNumInputPoints();
+}
+
+Integer SDB::GetNumOutputIndices() const
+{
+	return m_pImpl->GetNumOutputIndices();
+}
+
+Integer SDB::GetNumOutputHullFaces() const
+{
+	return m_pImpl->GetNumOutputHullFaces();
+}
+
+Integer SDB::GetNumBoundaryVerts() const
+{
+	return m_pImpl->GetNumBoundaryVerts();
+}
+
+Integer SDB::GetNumInternalVerts() const
+{
+	return m_pImpl->GetNumInternalVerts();
+}
+
+Integer SDB::GetNumPolygons() const
+{
+	return m_pImpl->GetNumPolygons();
+}
+
+const SDB::Simplex* SDB::GetFirstDelaunaySimplex() const
+{
+	return m_pImpl->GetFirstDelaunaySimplex();
+}
+
+const SDB::Simplex* SDB::GetFirstHullSimplex() const
+{
+	return m_pImpl->GetFirstHullSimplex();
+}
+
+const SDB::Vertex* SDB::GetFirstBoundaryVertex() const
+{
+	return m_pImpl->GetFirstBoundaryVertex();
+}
+
+const SDB::Vertex* SDB::GetFirstInternalVertex() const
+{
+	return m_pImpl->GetFirstInternalVertex();
+}
+
+const SDB::Vertex* SDB::GetVertexByIndex( Integer i ) const
+{
+	return m_pImpl->GetVertexByIndex( i );
+}
+
+Integer SDB::ConstrainEdges( Integer edges, const Integer* pa, const Integer* pb, size_t advance_bytes )
+{
+	return m_pImpl->ConstrainEdges( edges, pa, pb, advance_bytes );
+}
+
+Integer SDB::FloodFill( bool invert, const Simplex** exterior, int depth )
+{
+	return m_pImpl->FloodFill( invert, exterior, depth );
+}
+
+Integer SDB::Polygonize( const Simplex* poly[/*GetNumOutputIndices()/3*/ ] )
+{
+	return m_pImpl->Polygonize( poly );
+}
+
+Integer SDB::GenVoronoiDiagramVerts( Scalar* x, Scalar* y, size_t advance_bytes ) const
+{
+	return m_pImpl->GenVoronoiDiagramVerts( x, y, advance_bytes );
+}
+
+Integer SDB::GenVoronoiDiagramEdges( Integer* indices, size_t advance_bytes ) const
+{
+	return m_pImpl->GenVoronoiDiagramEdges( indices, advance_bytes );
+}
+
+Integer SDB::GenVoronoiDiagramPolys( Integer* indices, size_t advance_bytes, Integer* closed_indices ) const
+{
+	return m_pImpl->GenVoronoiDiagramPolys( indices, advance_bytes, closed_indices );
+}
+
+void SDB::CheckTopology() const
+{
+	m_pImpl->CheckTopology();
+}
+
+const Scalar SDBImpl::Face::iccerrboundA = ((Scalar(10) + Scalar(96) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits));
+
+const Scalar SDBImpl::Vert::resulterrbound = (Scalar(3) + Scalar(8) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits);
 
 //// this should cover all malcontents
 //template SDB<float, int8_t> *SDB<float, int8_t>::Create();

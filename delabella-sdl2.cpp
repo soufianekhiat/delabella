@@ -574,9 +574,9 @@ struct Buf
 using sdb::Scalar;
 using sdb::Integer;
 
-typedef sdb::SDB IDelaBella;
-typedef IDelaBella::Vertex DelaBella_Vertex;
-typedef IDelaBella::Simplex DelaBella_Triangle;
+typedef sdb::SDB SDB;
+typedef SDB::Vertex DelaBella_Vertex;
+typedef SDB::Simplex DelaBella_Triangle;
 
 struct MyPoint
 {
@@ -822,7 +822,7 @@ struct GfxStuffer
 
     void Upload(
         GLenum gl_e,
-        const IDelaBella* idb,
+        const SDB& idb,
         Integer points,
         const MyPoint* cloud,
         Integer constrain_edges,
@@ -938,8 +938,8 @@ struct GfxStuffer
         tex = glGetUniformLocation(prg, "tex");
         
         size_t gl_s = type == GL_DOUBLE ? sizeof(GLdouble) : sizeof(GLfloat);
-        Integer tris_delabella = idb->GetNumOutputIndices() / 3;
-        Integer contour = idb->GetNumBoundaryVerts();
+        Integer tris_delabella = idb.GetNumOutputIndices() / 3;
+        Integer contour = idb.GetNumBoundaryVerts();
 
         if (constrain_edges)
         {
@@ -1109,7 +1109,7 @@ struct GfxStuffer
         {
             ibo_delabella.Gen(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint[3]) * tris_delabella + sizeof(GLuint) * contour);
             ibo_ptr = (GLuint*)ibo_delabella.Map();
-            const DelaBella_Triangle* dela = idb->GetFirstDelaunaySimplex();
+            const DelaBella_Triangle* dela = idb.GetFirstDelaunaySimplex();
             for (int i = 0; i < tris_delabella; i++)
             {
                 Integer v0 = dela->v[0]->i;
@@ -1136,7 +1136,7 @@ struct GfxStuffer
 
         typedef GLuint tri_in_ibo[3];
 
-        const DelaBella_Vertex* vert = idb->GetFirstBoundaryVertex();
+        const DelaBella_Vertex* vert = idb.GetFirstBoundaryVertex();
         for (Integer i = 0; i<contour; i++)
         {
             ibo_ptr[i + 3*tris_delabella] = (GLuint)vert->i;
@@ -1565,7 +1565,7 @@ int Animate(const std::vector<MyPoint>& cloud, const std::vector<MyEdge>& force)
 	for (;; )
 	{
 		//{
-			IDelaBella* idb = IDelaBella::Create();
+			SDB* idb = SDB::Create();
 
 			Integer verts = idb->Triangulate(points, &cloud.data()->x, &cloud.data()->y, sizeof(MyPoint), (Integer)frame);
 			Integer tris_delabella = verts > 0 ? verts / 3 : 0;
@@ -2321,14 +2321,15 @@ int main(int argc, char* argv[])
             for (Integer i = 0; i < m; i++)
                 xxx.push_back(cloud[(size_t)sub[i]]);
 
-            IDelaBella* helper = IDelaBella::Create();
-            helper->Triangulate(m, &xxx.data()->x, &xxx.data()->y, sizeof(MyPoint));
+            SDB helper;
+            helper.Create();
+            helper.Triangulate(m, &xxx.data()->x, &xxx.data()->y, sizeof(MyPoint));
 
             // to avoid forth-and-back edges repeatitions,
             // traverse all faces but use edges with 
             // ascending y or in case of flat y use only if ascending x
 
-            const DelaBella_Triangle* dela = helper->GetFirstDelaunaySimplex();
+            const DelaBella_Triangle* dela = helper.GetFirstDelaunaySimplex();
             while (dela)
             {
                 for (int a = 0, b = 1, c = 2; a < 3; b = c, c = a, a++)
@@ -2341,7 +2342,7 @@ int main(int argc, char* argv[])
                 dela = dela->next;
             }
 
-            helper->Destroy();
+            helper.Destroy();
             free(sub);
         }
         
@@ -2786,15 +2787,16 @@ int main(int argc, char* argv[])
     }
     #endif
 
-	IDelaBella* idb = IDelaBella::Create();
+    SDB idb;
+    idb.Create();
 
     #ifndef BENCH
-	idb->SetErrLog(errlog, stdout);
+    idb.SetErrLog(errlog, stdout);
     #endif
 
     printf("running delabella...\n");
     uint64_t t6 = uSec();
-    Integer verts = idb->Triangulate(points, &cloud.data()->x, &cloud.data()->y, sizeof(MyPoint));
+    Integer verts = idb.Triangulate(points, &cloud.data()->x, &cloud.data()->y, sizeof(MyPoint));
     //idb->CheckTopology();
     #ifdef BENCH
     idb_bench->removing_dups = sorting_bench;
@@ -2802,8 +2804,8 @@ int main(int argc, char* argv[])
     #endif
 
     Integer tris_delabella = verts > 0 ? verts / 3 : 0;
-    Integer contour = idb->GetNumBoundaryVerts();
-    Integer non_contour = idb->GetNumInternalVerts();
+    Integer contour = idb.GetNumBoundaryVerts();
+    Integer non_contour = idb.GetNumInternalVerts();
     Integer vert_num = contour + non_contour;
 
     #ifdef VORONOI
@@ -2811,25 +2813,25 @@ int main(int argc, char* argv[])
     //idb->Polygonize(); // optional
 
     printf("Generating VD vertices\n");
-    Integer voronoi_vertices = idb->GenVoronoiDiagramVerts(0, 0, 0);
+    Integer voronoi_vertices = idb.GenVoronoiDiagramVerts(0, 0, 0);
     MyPoint* voronoi_vtx_buf = (MyPoint*)malloc((size_t)voronoi_vertices * sizeof(MyPoint));
     assert(voronoi_vtx_buf);
-    idb->GenVoronoiDiagramVerts(&voronoi_vtx_buf->x, &voronoi_vtx_buf->y, sizeof(MyPoint));
+    idb.GenVoronoiDiagramVerts(&voronoi_vtx_buf->x, &voronoi_vtx_buf->y, sizeof(MyPoint));
 
     printf("Generating VD indices\n");
     #ifdef VORONOI_POLYS
     // testing... will remove
     Integer voronoi_closed_indices;
-    Integer voronoi_indices = idb->GenVoronoiDiagramPolys(0, 0, 0);
+    Integer voronoi_indices = idb.GenVoronoiDiagramPolys(0, 0, 0);
     Integer* voronoi_idx_buf = (Integer*)malloc(voronoi_indices * sizeof(Integer));
     assert(voronoi_idx_buf);
-    idb->GenVoronoiDiagramPolys(voronoi_idx_buf, sizeof(Integer), &voronoi_closed_indices);
+    idb.GenVoronoiDiagramPolys(voronoi_idx_buf, sizeof(Integer), &voronoi_closed_indices);
     #else
     Integer voronoi_closed_indices = 0;
-    Integer voronoi_indices = idb->GenVoronoiDiagramEdges(0, 0);
+    Integer voronoi_indices = idb.GenVoronoiDiagramEdges(0, 0);
     Integer* voronoi_idx_buf = (Integer*)malloc((size_t)voronoi_indices * sizeof(Integer));
     assert(voronoi_idx_buf);
-    idb->GenVoronoiDiagramEdges(voronoi_idx_buf, sizeof(Integer));
+    idb.GenVoronoiDiagramEdges(voronoi_idx_buf, sizeof(Integer));
     #endif
 
     printf("VD vertices = " IDXF ", indices = " IDXF "\n", voronoi_vertices, voronoi_indices);
@@ -2841,7 +2843,7 @@ int main(int argc, char* argv[])
         idb_bench->constrain_edges = uSec();
         #endif
 
-        idb->ConstrainEdges((Integer)force.size(), &force.data()->a, &force.data()->b, (int)sizeof(MyEdge));
+        idb.ConstrainEdges((Integer)force.size(), &force.data()->a, &force.data()->b, (int)sizeof(MyEdge));
         //idb->CheckTopology();
 
         #ifdef BENCH
@@ -2849,8 +2851,8 @@ int main(int argc, char* argv[])
         #endif
 
         uint64_t ff0 = uSec();
-        Integer num_interior = idb->FloodFill(false, 0);
-        //idb->CheckTopology();
+        Integer num_interior = idb.FloodFill(false, 0);
+        //idb.CheckTopology();
         uint64_t ff1 = uSec();
 
         printf("interior %d faces in %d ms\n", num_interior, (int)((ff1 - ff0) / 1000));
@@ -2870,7 +2872,7 @@ int main(int argc, char* argv[])
     idb_bench->polygons = uSec();
     #endif    
     
-    Integer polys_delabella = idb->Polygonize(dela_polys);
+    Integer polys_delabella = idb.Polygonize(dela_polys);
     //idb->CheckTopology();
     
     #ifdef BENCH
@@ -2889,7 +2891,7 @@ int main(int argc, char* argv[])
         printf("nothing interesting to show, exiting!\n");
 		// no points given or all points are colinear
 		// make emergency call ...
-		idb->Destroy();
+        idb.Destroy();
 		return -2;
 	}
 
@@ -3054,7 +3056,7 @@ int main(int argc, char* argv[])
         {
             for (Integer i=0; i<tris_delabella; i++)
             {
-                const DelaBella_Triangle* dela = idb->GetFirstDelaunaySimplex();
+                const DelaBella_Triangle* dela = idb.GetFirstDelaunaySimplex();
                 fprintf(f,"" IDXF " " IDXF " " IDXF "\n",
                     dela->v[0]->i,
                     dela->v[1]->i,
@@ -3110,7 +3112,7 @@ int main(int argc, char* argv[])
     if (!window)
     {
         printf("SDL_CreateWindow failed, terminating!\n");
-        idb->Destroy();
+        idb.Destroy();
         return -1;
     }
 
@@ -3118,7 +3120,7 @@ int main(int argc, char* argv[])
     if (!context)
     {
         printf("SDL_GL_CreateContext failed, terminating!\n");
-        idb->Destroy();
+        idb.Destroy();
         return -1;
     }
 
@@ -3146,14 +3148,14 @@ int main(int argc, char* argv[])
     if (glsl_ver < 330)
     {
         printf("GLSL %d is too weak - terminating!", glsl_ver);
-        idb->Destroy();
+        idb.Destroy();
         return -1;
     }
 
 	if (!BindGL())
 	{
 		printf("Can't bind to necessary GL functions, terminating!\n");
-		idb->Destroy();
+        idb.Destroy();
 		return -1;
 	}
 
