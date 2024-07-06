@@ -6,8 +6,11 @@ Aiming, Simpler implementation for integration:
 * Less templates
 * Configurable at compile time
 * No C++ interface (no pure function, ...)
+* float type by default
 
-Still WIP
+TODO:
+* Allow compilation without predicate (add benchmark to measure the coast of adaptative-exact predicates).
+* Move toward full C-like api without method, just C-Call.
 
 # DelaBella
 ## 2D Exact Delaunay triangulation
