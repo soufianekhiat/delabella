@@ -65,36 +65,33 @@ static uint64_t uSec()
 #endif
 }
 
-
 struct SDBImpl
 {
 	SDBImpl() : vert_map(0),
-					vert_alloc(0),
-					face_alloc(0),
-					max_verts(0),
-					max_faces(0),
-					first_dela_face(0),
-					first_hull_face(0),
-					first_boundary_vert(0),
-					first_internal_vert(0),
-					inp_verts(0),
-					out_verts(0),
-					out_boundary_verts(0),
-					polygons(0),
-					out_hull_faces(0),
-					unique_points(0),
-					errlog_proc(0),
-					errlog_file(0)
-	{
-	}
+				vert_alloc(0),
+				face_alloc(0),
+				max_verts(0),
+				max_faces(0),
+				first_dela_face(0),
+				first_hull_face(0),
+				first_boundary_vert(0),
+				first_internal_vert(0),
+				inp_verts(0),
+				out_verts(0),
+				out_boundary_verts(0),
+				polygons(0),
+				out_hull_faces(0),
+				unique_points(0),
+				errlog_proc(0),
+				errlog_file(0)
+	{}
 
 	struct Face;
 
-	struct Iter : SDB::Iterator
-	{
-	};
+	struct Iter : SDBIterator
+	{};
 
-	struct Vert : SDB::Vertex
+	struct Vert : SDBVertex
 	{
 		static const Scalar resulterrbound;
 
@@ -167,7 +164,7 @@ struct SDBImpl
 	};
 
 
-	struct Face : SDB::Simplex
+	struct Face : SDBSimplex
 	{
 		static const Scalar iccerrboundA;
 
@@ -1593,7 +1590,7 @@ struct SDBImpl
 		return false;
 	}
 
-	virtual Integer ConstrainEdges(Integer edges, const Integer *pa, const Integer *pb, size_t advance_bytes)
+	Integer ConstrainEdges(Integer edges, const Integer *pa, const Integer *pb, size_t advance_bytes)
 	{
 		if (advance_bytes == 0)
 			advance_bytes = 2 * sizeof(Integer);
@@ -2164,7 +2161,7 @@ struct SDBImpl
 		return polygons;
 	}
 
-	virtual Integer FloodFill(bool invert, const typename SDB::Simplex **exterior, int depth)
+	Integer FloodFill(bool invert, const typename SDBSimplex **exterior, int depth)
 	{
 		if (!first_dela_face)
 			return 0;
@@ -2468,7 +2465,7 @@ struct SDBImpl
 		return interior;
 	}
 
-	virtual Integer Polygonize(const typename SDB::Simplex *poly[])
+	Integer Polygonize(const typename SDBSimplex *poly[])
 	{
 		const Integer marker = (Integer)(-1);
 
@@ -2477,7 +2474,7 @@ struct SDBImpl
 		if (!poly)
 		{
 			buf = (Face **)malloc(sizeof(Face *) * (size_t)out_verts / 3);
-			poly = (const typename SDB::Simplex **)buf;
+			poly = (const typename SDBSimplex **)buf;
 			if (!poly)
 				return -1;
 		}
@@ -2760,7 +2757,7 @@ struct SDBImpl
 		return num;
 	}
 
-	virtual Integer Triangulate(Integer points, const Scalar *x, const Scalar *y, size_t advance_bytes, Integer stop)
+	Integer Triangulate(Integer points, const Scalar *x, const Scalar *y, size_t advance_bytes, Integer stop)
 	{
 		uint64_t sort_stamp = uSec();
 
@@ -3232,7 +3229,7 @@ struct SDBImpl
 						*/
 						#endif
 					}
-				} // virtual stack while
+				} // stack while
 
 				bool ret = stack == 0;
 
@@ -3299,7 +3296,7 @@ struct SDBImpl
 		return out_verts;
 	}
 
-	virtual void Destroy()
+	void Destroy()
 	{
 		if (vert_map)
 			free(vert_map);
@@ -3320,72 +3317,72 @@ struct SDBImpl
 	}
 
 	// num of points passed to last call to Triangulate()
-	virtual Integer GetNumInputPoints() const
+	Integer GetNumInputPoints() const
 	{
 		return inp_verts;
 	}
 
 	// num of verts returned from last call to Triangulate()
-	virtual Integer GetNumOutputIndices() const
+	Integer GetNumOutputIndices() const
 	{
 		return out_verts;
 	}
 
-	virtual Integer GetNumOutputHullFaces() const
+	Integer GetNumOutputHullFaces() const
 	{
 		return out_hull_faces;
 	}
 
-	virtual Integer GetNumBoundaryVerts() const
+	Integer GetNumBoundaryVerts() const
 	{
 		return out_verts < 0 ? -out_verts : out_boundary_verts;
 	}
 
-	virtual Integer GetNumInternalVerts() const
+	Integer GetNumInternalVerts() const
 	{
 		return out_verts < 0 ? 0 : unique_points - out_boundary_verts;
 	}
 
 	// num of polygons
-	virtual Integer GetNumPolygons() const
+	Integer GetNumPolygons() const
 	{
 		return polygons;
 	}
 
-	virtual const typename SDB::Simplex *GetFirstDelaunaySimplex() const
+	const typename SDBSimplex *GetFirstDelaunaySimplex() const
 	{
 		return first_dela_face;
 	}
 
-	virtual const typename SDB::Simplex *GetFirstHullSimplex() const
+	const typename SDBSimplex *GetFirstHullSimplex() const
 	{
 		return first_hull_face;
 	}
 
-	virtual const typename SDB::Vertex *GetFirstBoundaryVertex() const
+	const typename SDBVertex *GetFirstBoundaryVertex() const
 	{
 		return first_boundary_vert;
 	}
 
-	virtual const typename SDB::Vertex *GetFirstInternalVertex() const
+	const typename SDBVertex *GetFirstInternalVertex() const
 	{
 		return first_internal_vert;
 	}
 
-	virtual const typename SDB::Vertex *GetVertexByIndex(Integer i) const
+	const typename SDBVertex *GetVertexByIndex(Integer i) const
 	{
 		if (i < 0 || i >= inp_verts)
 			return 0;
 		return vert_alloc + vert_map[i];
 	}
 
-	virtual void SetErrLog(int (*proc)(void *stream, const char *fmt, ...), void *stream)
+	void SetErrLog(int (*proc)(void *stream, const char *fmt, ...), void *stream)
 	{
 		errlog_proc = proc;
 		errlog_file = stream;
 	}
 
-	virtual Integer GenVoronoiDiagramVerts(Scalar *x, Scalar *y, size_t advance_bytes) const
+	Integer GenVoronoiDiagramVerts(Scalar *x, Scalar *y, size_t advance_bytes) const
 	{
 		if (!first_dela_face)
 			return 0;
@@ -3453,7 +3450,7 @@ struct SDBImpl
 		return ret;
 	}
 
-	virtual Integer GenVoronoiDiagramEdges(Integer *indices, size_t advance_bytes) const
+	Integer GenVoronoiDiagramEdges(Integer *indices, size_t advance_bytes) const
 	{
 		if (!first_dela_face)
 			return 0;
@@ -3571,7 +3568,7 @@ struct SDBImpl
 		return ret;
 	}
 
-	virtual Integer GenVoronoiDiagramPolys(Integer *indices, size_t advance_bytes, Integer *closed_indices) const
+	Integer GenVoronoiDiagramPolys(Integer *indices, size_t advance_bytes, Integer *closed_indices) const
 	{
 		if (!first_dela_face)
 			return 0;
@@ -3761,7 +3758,7 @@ struct SDBImpl
 		}
 	}
 
-	virtual void CheckTopology() const
+	void CheckTopology() const
 	{
 		assert(first_boundary_vert);
 		if (unique_points > out_boundary_verts)
@@ -3875,27 +3872,27 @@ Integer SDB::GetNumPolygons() const
 	return m_pImpl->GetNumPolygons();
 }
 
-const SDB::Simplex* SDB::GetFirstDelaunaySimplex() const
+const SDBSimplex* SDB::GetFirstDelaunaySimplex() const
 {
 	return m_pImpl->GetFirstDelaunaySimplex();
 }
 
-const SDB::Simplex* SDB::GetFirstHullSimplex() const
+const SDBSimplex* SDB::GetFirstHullSimplex() const
 {
 	return m_pImpl->GetFirstHullSimplex();
 }
 
-const SDB::Vertex* SDB::GetFirstBoundaryVertex() const
+const SDBVertex* SDB::GetFirstBoundaryVertex() const
 {
 	return m_pImpl->GetFirstBoundaryVertex();
 }
 
-const SDB::Vertex* SDB::GetFirstInternalVertex() const
+const SDBVertex* SDB::GetFirstInternalVertex() const
 {
 	return m_pImpl->GetFirstInternalVertex();
 }
 
-const SDB::Vertex* SDB::GetVertexByIndex( Integer i ) const
+const SDBVertex* SDB::GetVertexByIndex( Integer i ) const
 {
 	return m_pImpl->GetVertexByIndex( i );
 }
@@ -3905,12 +3902,12 @@ Integer SDB::ConstrainEdges( Integer edges, const Integer* pa, const Integer* pb
 	return m_pImpl->ConstrainEdges( edges, pa, pb, advance_bytes );
 }
 
-Integer SDB::FloodFill( bool invert, const Simplex** exterior, int depth )
+Integer SDB::FloodFill( bool invert, const SDBSimplex** exterior, int depth )
 {
 	return m_pImpl->FloodFill( invert, exterior, depth );
 }
 
-Integer SDB::Polygonize( const Simplex* poly[/*GetNumOutputIndices()/3*/ ] )
+Integer SDB::Polygonize( const SDBSimplex* poly[/*GetNumOutputIndices()/3*/ ] )
 {
 	return m_pImpl->Polygonize( poly );
 }
@@ -3938,23 +3935,6 @@ void SDB::CheckTopology() const
 const Scalar SDBImpl::Face::iccerrboundA = ((Scalar(10) + Scalar(96) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits));
 
 const Scalar SDBImpl::Vert::resulterrbound = (Scalar(3) + Scalar(8) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits);
-
-//// this should cover all malcontents
-//template SDB<float, int8_t> *SDB<float, int8_t>::Create();
-//template SDB<double, int8_t> *SDB<double, int8_t>::Create();
-//template SDB<long double, int8_t> *SDB<long double, int8_t>::Create();
-//
-//template SDB<float, int16_t> *SDB<float, int16_t>::Create();
-//template SDB<double, int16_t> *SDB<double, int16_t>::Create();
-//template SDB<long double, int16_t> *SDB<long double, int16_t>::Create();
-//
-//template SDB<float, int32_t> *SDB<float, int32_t>::Create();
-//template SDB<double, int32_t> *SDB<double, int32_t>::Create();
-//template SDB<long double, int32_t> *SDB<long double, int32_t>::Create();
-//
-//template SDB<float, int64_t> *SDB<float, int64_t>::Create();
-//template SDB<double, int64_t> *SDB<double, int64_t>::Create();
-//template SDB<long double, int64_t> *SDB<long double, int64_t>::Create();
 
 #ifdef __cplusplus
 }

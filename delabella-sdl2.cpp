@@ -575,8 +575,8 @@ using sdb::Scalar;
 using sdb::Integer;
 
 typedef sdb::SDB SDB;
-typedef SDB::Vertex DelaBella_Vertex;
-typedef SDB::Simplex DelaBella_Triangle;
+typedef sdb::SDBVertex SDBVertex;
+typedef sdb::SDBSimplex SDBSimplex;
 
 struct MyPoint
 {
@@ -1055,7 +1055,7 @@ struct GfxStuffer
         {
             struct TriSort
             {
-                const DelaBella_Triangle* tri;
+                const SDBSimplex* tri;
                 Scalar weight;
                 bool operator < (const TriSort& b) const
                 {
@@ -1064,7 +1064,7 @@ struct GfxStuffer
             };
             TriSort* trisort = (TriSort*)malloc(sizeof(TriSort) * (size_t)tris_delabella);
             assert(trisort);
-            const DelaBella_Triangle* dela = idb->GetFirstDelaunaySimplex();
+            const SDBSimplex* dela = idb->GetFirstDelaunaySimplex();
             for (Integer i = 0; i < tris_delabella; i++)
             {
                 trisort[i].tri = dela;
@@ -1109,7 +1109,7 @@ struct GfxStuffer
         {
             ibo_delabella.Gen(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint[3]) * tris_delabella + sizeof(GLuint) * contour);
             ibo_ptr = (GLuint*)ibo_delabella.Map();
-            const DelaBella_Triangle* dela = idb.GetFirstDelaunaySimplex();
+            const SDBSimplex* dela = idb.GetFirstDelaunaySimplex();
             for (int i = 0; i < tris_delabella; i++)
             {
                 Integer v0 = dela->v[0]->i;
@@ -1136,7 +1136,7 @@ struct GfxStuffer
 
         typedef GLuint tri_in_ibo[3];
 
-        const DelaBella_Vertex* vert = idb.GetFirstBoundaryVertex();
+        const SDBVertex* vert = idb.GetFirstBoundaryVertex();
         for (Integer i = 0; i<contour; i++)
         {
             ibo_ptr[i + 3*tris_delabella] = (GLuint)vert->i;
@@ -2329,7 +2329,7 @@ int main(int argc, char* argv[])
             // traverse all faces but use edges with 
             // ascending y or in case of flat y use only if ascending x
 
-            const DelaBella_Triangle* dela = helper.GetFirstDelaunaySimplex();
+            const SDBSimplex* dela = helper.GetFirstDelaunaySimplex();
             while (dela)
             {
                 for (int a = 0, b = 1, c = 2; a < 3; b = c, c = a, a++)
@@ -2866,7 +2866,7 @@ int main(int argc, char* argv[])
     idb_bench->erase_super = 0;
     #endif
 
-    const DelaBella_Triangle** dela_polys = (const DelaBella_Triangle**)malloc(sizeof(const DelaBella_Triangle*) * (size_t)tris_delabella);
+    const SDBSimplex** dela_polys = (const SDBSimplex**)malloc(sizeof(const SDBSimplex*) * (size_t)tris_delabella);
 
     #ifdef BENCH
     idb_bench->polygons = uSec();
@@ -2988,12 +2988,12 @@ int main(int argc, char* argv[])
             {
                 int s = 0;
 
-                const DelaBella_Triangle* f = dela_polys[p];
+                const SDBSimplex* f = dela_polys[p];
 
                 for (int i = 0; i < 3; i++)
                 {
                     int j = n + s;
-                    const DelaBella_Vertex* k = f->v[i];
+                    const SDBVertex* k = f->v[i];
                     idb_v[j].x = k->x;
                     idb_v[j].y = k->y;
                     s++;
@@ -3004,7 +3004,7 @@ int main(int argc, char* argv[])
                 while (f && f->index == p)
                 {
                     int j = n + s;
-                    const DelaBella_Vertex* k = f->v[0];
+                    const SDBVertex* k = f->v[0];
                     idb_v[j].x = k->x;
                     idb_v[j].y = k->y;
                     s++;
@@ -3056,7 +3056,7 @@ int main(int argc, char* argv[])
         {
             for (Integer i=0; i<tris_delabella; i++)
             {
-                const DelaBella_Triangle* dela = idb.GetFirstDelaunaySimplex();
+                const SDBSimplex* dela = idb.GetFirstDelaunaySimplex();
                 fprintf(f,"" IDXF " " IDXF " " IDXF "\n",
                     dela->v[0]->i,
                     dela->v[1]->i,
