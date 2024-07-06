@@ -2230,12 +2230,12 @@ int main(int argc, char* argv[])
         else
         if (strcmp(dist, "bar") == 0)
         {
-			const Scalar tri[3][2] =
-			{
-				{-1.0,0.0},
-				{0.0,sqrt(3.0)},
-				{+1.0,0.0}
-			};
+            const Scalar tri[ 3 ][ 2 ] =
+            {
+                {( Scalar )-1.0,( Scalar )0.0},
+                {( Scalar )0.0,sqrt( ( Scalar )3.0 )},
+                {( Scalar )+1.0,( Scalar )0.0}
+            };
             for (Integer i = 0; i < n; i++)
             {
 				Scalar baryc[3];

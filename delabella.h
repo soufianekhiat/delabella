@@ -14,7 +14,7 @@ namespace sdb {
 #endif
 
 #ifndef SCALAR_TYPE
-#define SCALAR_TYPE double
+#define SCALAR_TYPE float
 #endif
 #ifndef INTEGER_TYPE
 #define INTEGER_TYPE int
