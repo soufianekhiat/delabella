@@ -1,4 +1,7 @@
 /*
+* Simple DelaBella: sdb
+* Aim to be Closer to C-like less C++
+Froked from:
 DELABELLA - Delaunay triangulation library
 Copyright (C) 2018-2022 GUMIX - Marcin Sokalski
 */
@@ -27,6 +30,10 @@ Copyright (C) 2018-2022 GUMIX - Marcin Sokalski
 
 #include "delabella.h"
 #include "predicates.h"
+
+#ifdef __cplusplus
+namespace sdb{
+#endif
 
 // benching hack, fixme!
 uint64_t sorting_bench = 0;
@@ -58,13 +65,8 @@ static uint64_t uSec()
 #endif
 }
 
-template <typename T, typename I>
-IDelaBella2<T, I>::~IDelaBella2()
-{
-}
 
-template <typename T, typename I>
-struct CDelaBella2 : IDelaBella2<T, I>
+struct CDelaBella2 : SDB
 {
 	CDelaBella2() : vert_map(0),
 					vert_alloc(0),
@@ -88,13 +90,13 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 	struct Face;
 
-	struct Iter : IDelaBella2<T, I>::Iterator
+	struct Iter : SDB::Iterator
 	{
 	};
 
-	struct Vert : IDelaBella2<T, I>::Vertex
+	struct Vert : SDB::Vertex
 	{
-		static const T resulterrbound;
+		static const Scalar resulterrbound;
 
 		static bool overlap(const Vert *v1, const Vert *v2)
 		{
@@ -115,12 +117,12 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 			// reversing paraboloid, somewhat faster without predicate
 			{
-				T ax = this->x+T(1.1);
-				T ay = this->y+T(0.9);
-				T bx = v.x+T(1.1);
-				T by = v.y+T(0.9);
-				T a = ax*ax+ay*ay;
-				T b = bx*bx+by*by;
+				Scalar ax = this->x+Scalar(1.1);
+				Scalar ay = this->y+Scalar(0.9);
+				Scalar bx = v.x+Scalar(1.1);
+				Scalar by = v.y+Scalar(0.9);
+				Scalar a = ax*ax+ay*ay;
+				Scalar b = bx*bx+by*by;
 				if (a == b)
 				{
 					if (this->x > v.x || this->x == v.x && this->y > v.y)
@@ -132,7 +134,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 			// reversing paraboloid, speeds up: gam,sym,hex, bias (1.1,0.9) added mostly for sym to de-sym it
 			{
-				T dif = predicates::adaptive::sqrlendif2d(this->x + T(1.1), this->y + T(0.9), v.x + T(1.1), v.y + T(0.9));
+				Scalar dif = predicates::adaptive::sqrlendif2d(this->x + Scalar(1.1), this->y + Scalar(0.9), v.x + Scalar(1.1), v.y + Scalar(0.9));
 				if (dif > 0)
 					return true;
 				if (dif < 0)
@@ -144,14 +146,14 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 
 			{	// somewhat faster, poor compiler inlining?
-				const T a = this->x * this->x + this->y * this->y;
-				const T b = v.x * v.x + v.y * v.y;
-				const T c = a - b;
+				const Scalar a = this->x * this->x + this->y * this->y;
+				const Scalar b = v.x * v.x + v.y * v.y;
+				const Scalar c = a - b;
 				if (std::abs(c) > (a + b) * resulterrbound)
 					return c < 0;
 			}
 
-			T dif = predicates::adaptive::sqrlendif2d(this->x, this->y, v.x, v.y);
+			Scalar dif = predicates::adaptive::sqrlendif2d(this->x, this->y, v.x, v.y);
 
 			if (dif < 0)
 				return true;
@@ -165,9 +167,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 	};
 
 
-	struct Face : IDelaBella2<T, I>::Simplex
+	struct Face : SDB::Simplex
 	{
-		static const T iccerrboundA;
+		static const Scalar iccerrboundA;
 
 		void RotateEdgeFlagsCCW() // <<
 		{
@@ -268,39 +270,39 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		{
 			{ // somewhat faster, poor compiler inlining?
 
-				const T dx = this->v[2]->x;
-				const T dy = this->v[2]->y;
+				const Scalar dx = this->v[2]->x;
+				const Scalar dy = this->v[2]->y;
 
-				const T adx = p.x - dx;
-				const T ady = p.y - dy;
-				const T bdx = this->v[0]->x - dx;
-				const T bdy = this->v[0]->y - dy;
-				const T cdx = this->v[1]->x - dx;
-				const T cdy = this->v[1]->y - dy;
+				const Scalar adx = p.x - dx;
+				const Scalar ady = p.y - dy;
+				const Scalar bdx = this->v[0]->x - dx;
+				const Scalar bdy = this->v[0]->y - dy;
+				const Scalar cdx = this->v[1]->x - dx;
+				const Scalar cdy = this->v[1]->y - dy;
 
-				const T adxcdy = adx * cdy;
-				const T adxbdy = adx * bdy;
-				const T bdxcdy = bdx * cdy;
-				const T bdxady = bdx * ady;
-				const T cdxbdy = cdx * bdy;
-				const T cdxady = cdx * ady;
+				const Scalar adxcdy = adx * cdy;
+				const Scalar adxbdy = adx * bdy;
+				const Scalar bdxcdy = bdx * cdy;
+				const Scalar bdxady = bdx * ady;
+				const Scalar cdxbdy = cdx * bdy;
+				const Scalar cdxady = cdx * ady;
 
-				const T alift = adx * adx + ady * ady;
-				const T blift = bdx * bdx + bdy * bdy;
-				const T clift = cdx * cdx + cdy * cdy;
+				const Scalar alift = adx * adx + ady * ady;
+				const Scalar blift = bdx * bdx + bdy * bdy;
+				const Scalar clift = cdx * cdx + cdy * cdy;
 
-				const T dif_bdxcdy_cdxbdy = bdxcdy - cdxbdy;
-				const T sum_abs_bdxcdy_cdxbdy = std::abs(bdxcdy) + std::abs(cdxbdy);
+				const Scalar dif_bdxcdy_cdxbdy = bdxcdy - cdxbdy;
+				const Scalar sum_abs_bdxcdy_cdxbdy = std::abs(bdxcdy) + std::abs(cdxbdy);
 
-				const T det_a = alift * dif_bdxcdy_cdxbdy;
-				const T det_b = blift * (cdxady - adxcdy);
-				const T det_c = clift * (adxbdy - bdxady);
+				const Scalar det_a = alift * dif_bdxcdy_cdxbdy;
+				const Scalar det_b = blift * (cdxady - adxcdy);
+				const Scalar det_c = clift * (adxbdy - bdxady);
 
-				const T det = det_a + det_b + det_c;
+				const Scalar det = det_a + det_b + det_c;
 
-				const T permanent = sum_abs_bdxcdy_cdxbdy * alift + (std::abs(cdxady) + std::abs(adxcdy)) * blift + (std::abs(adxbdy) + std::abs(bdxady)) * clift;
+				const Scalar permanent = sum_abs_bdxcdy_cdxbdy * alift + (std::abs(cdxady) + std::abs(adxcdy)) * blift + (std::abs(adxbdy) + std::abs(bdxady)) * clift;
 
-				T errbound = iccerrboundA * permanent;
+				Scalar errbound = iccerrboundA * permanent;
 				if (std::abs(det) >= std::abs(errbound))
 					return det <= 0;
 			}
@@ -315,35 +317,35 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 	Vert *vert_alloc;
 	Face *face_alloc;
-	I *vert_map;
-	I max_verts;
-	I max_faces;
+	Integer *vert_map;
+	Integer max_verts;
+	Integer max_faces;
 
 	Face *first_dela_face;
 	Face *first_hull_face;
 	Vert *first_boundary_vert;
 	Vert *first_internal_vert;
 
-	I inp_verts;
-	I out_verts;
-	I polygons;
-	I out_hull_faces;
-	I out_boundary_verts;
-	I unique_points;
+	Integer inp_verts;
+	Integer out_verts;
+	Integer polygons;
+	Integer out_hull_faces;
+	Integer out_boundary_verts;
+	Integer unique_points;
 
-	T trans[2]; // experimental
+	Scalar trans[2]; // experimental
 
 	int (*errlog_proc)(void *file, const char *fmt, ...);
 	void *errlog_file;
 
-	I Prepare(I *start, Face **hull, I *out_hull_faces, Face **cache, uint64_t *sort_stamp, I stop)
+	Integer Prepare(Integer *start, Face **hull, Integer *out_hull_faces, Face **cache, uint64_t *sort_stamp, Integer stop)
 	{
 		//uint64_t time0 = uSec();
 
 		//if (errlog_proc)
 		//	errlog_proc(errlog_file, "[...] sorting vertices");
 
-		I points = inp_verts;
+		Integer points = inp_verts;
 
 		if (stop >= 0 && points > stop)
 			points = stop;
@@ -354,12 +356,12 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			bool operator () (const Vert& l, const Vert& r) const
 			{
 				// reversing paraboloid, somewhat faster without predicate
-				T ax = l.x + tx;
-				T ay = l.y + ty;
-				T bx = r.x + tx;
-				T by = r.y + ty;
-				T a = ax * ax + ay * ay;
-				T b = bx * bx + by * by;
+				Scalar ax = l.x + tx;
+				Scalar ay = l.y + ty;
+				Scalar bx = r.x + tx;
+				Scalar by = r.y + ty;
+				Scalar a = ax * ax + ay * ay;
+				Scalar b = bx * bx + by * by;
 				if (a == b)
 				{
 					if (l.x > r.x || l.x == r.x && l.y > r.y)
@@ -369,7 +371,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				return a > b;
 			}
 
-			const T tx, ty;
+			const Scalar tx, ty;
 		} cmp = { trans[0], trans[1] };
 
 		std::sort(vert_alloc, vert_alloc + points, cmp);
@@ -379,7 +381,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		{
 			vert_map[vert_alloc[0].i] = 0;
 
-			I w = 0, r = 1; // skip initial no-dups block
+			Integer w = 0, r = 1; // skip initial no-dups block
 			while (r < points && !Vert::overlap(vert_alloc + r, vert_alloc + w))
 			{
 				vert_map[vert_alloc[r].i] = r;
@@ -387,7 +389,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				r++;
 			}
 
-			I d = w; // dup map
+			Integer d = w; // dup map
 			w++;
 
 			while (r < points)
@@ -418,7 +420,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			{
 				if (w > 3)
 				{
-					const I tail = w - 1;
+					const Integer tail = w - 1;
 					Vert tmp = vert_alloc[tail];
 					memmove(vert_alloc + 1, vert_alloc, sizeof(Vert)*tail);
 					vert_alloc[0] = tmp;
@@ -440,22 +442,22 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				if (w > cracks)
 				{
 					Vert crack[cracks];
-					for (I c = 0; c < cracks; c++)
+					for (Integer c = 0; c < cracks; c++)
 					{
-						I d = w - 1 - w * c / cracks;
-						I b = w - 1 - w * (c + 1) / cracks;
+						Integer d = w - 1 - w * c / cracks;
+						Integer b = w - 1 - w * (c + 1) / cracks;
 
 						crack[c] = vert_alloc[d];
 						memmove(vert_alloc + b + c + 2, vert_alloc + b + 1, sizeof(Vert)*(d - b - 1));
 					}
 					memcpy(vert_alloc, crack, sizeof(Vert)*cracks);
 
-					const I ofs = cracks * (w - 1) / w;
+					const Integer ofs = cracks * (w - 1) / w;
 					for (int i = 0; i < points; i++)
 					{
-						I m = vert_map[i];
-						I c  = ofs - cracks * m / w;
-						I cc = ofs - cracks * (m + 1) / w;
+						Integer m = vert_map[i];
+						Integer c  = ofs - cracks * m / w;
+						Integer cc = ofs - cracks * (m + 1) / w;
 
 						if (cc < c)
 							vert_map[i] = c;
@@ -509,14 +511,14 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			return -points;
 		}
 
-		I i;
+		Integer i;
 		Face f; // tmp
 		f.v[0] = vert_alloc + 0;
 
-		T lo_x = vert_alloc[0].x, hi_x = lo_x;
-		T lo_y = vert_alloc[0].y, hi_y = lo_y;
-		I lower_left = 0;
-		I upper_right = 0;
+		Scalar lo_x = vert_alloc[0].x, hi_x = lo_x;
+		Scalar lo_y = vert_alloc[0].y, hi_y = lo_y;
+		Integer lower_left = 0;
+		Integer upper_right = 0;
 		for (i = 1; i < 3; i++)
 		{
 			Vert *v = vert_alloc + i;
@@ -584,12 +586,12 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			i++;
 		}
 
-		I *vert_sub = 0;
+		Integer *vert_sub = 0;
 
 		bool colinear = f.sign0(); // hybrid
 		if (colinear)
 		{
-			vert_sub = (I *)malloc(sizeof(I) * ((size_t)i + 1));
+			vert_sub = (Integer *)malloc(sizeof(Integer) * ((size_t)i + 1));
 			if (!vert_sub)
 			{
 				if (errlog_proc)
@@ -597,7 +599,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				return 0;
 			}
 
-			for (I s = 0; s <= i; s++)
+			for (Integer s = 0; s <= i; s++)
 				vert_sub[s] = s;
 
 			// choose x or y axis to sort verts (no need to be exact)
@@ -605,7 +607,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			{
 				struct
 				{
-					bool operator()(const I &a, const I &b)
+					bool operator()(const Integer &a, const Integer &b)
 					{
 						return less(vert_alloc[a], vert_alloc[b]);
 					}
@@ -625,7 +627,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			{
 				struct
 				{
-					bool operator()(const I &a, const I &b)
+					bool operator()(const Integer &a, const Integer &b)
 					{
 						return less(vert_alloc[a], vert_alloc[b]);
 					}
@@ -648,7 +650,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			// sort parts separately in opposite directions
 			// mark part with Vert::sew temporarily
 
-			for (I j = 0; j < i; j++)
+			for (Integer j = 0; j < i; j++)
 			{
 				if (j == lower_left)
 				{
@@ -665,7 +667,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 					Vert *ll = vert_alloc + lower_left;
 					Vert *ur = vert_alloc + upper_right;
 
-					T dot = predicates::adaptive::orient2d(ll->x, ll->y, ur->x, ur->y, vert_alloc[j].x, vert_alloc[j].y);
+					Scalar dot = predicates::adaptive::orient2d(ll->x, ll->y, ur->x, ur->y, vert_alloc[j].x, vert_alloc[j].y);
 
 					if (dot < 0)
 					{
@@ -691,7 +693,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			{
 				// default to CW order (unlikely, if wrong, we will reverse using one=2 and two=1)
 
-				bool operator()(const I &a, const I &b) const
+				bool operator()(const Integer &a, const Integer &b) const
 				{
 					return less(vert_alloc[a], vert_alloc[b]);
 				}
@@ -736,7 +738,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				Vert *vert_alloc;
 			} c;
 
-			vert_sub = (I *)malloc(sizeof(I) * ((size_t)i + 1));
+			vert_sub = (Integer *)malloc(sizeof(Integer) * ((size_t)i + 1));
 			if (!vert_sub)
 			{
 				if (errlog_proc)
@@ -744,7 +746,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				return 0;
 			}
 
-			for (I s = 0; s <= i; s++)
+			for (Integer s = 0; s <= i; s++)
 				vert_sub[s] = s;
 
 			c.vert_alloc = vert_alloc;
@@ -756,7 +758,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		// alloc faces only if we're going to create them
 		if (i < points || !colinear)
 		{
-			I hull_faces = 2 * points - 4;
+			Integer hull_faces = 2 * points - 4;
 			*out_hull_faces = hull_faces;
 
 			if (max_faces < hull_faces)
@@ -792,7 +794,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			}
 
 			face_alloc[0].flags = 0;
-			for (I i = 1; i < hull_faces; i++)
+			for (Integer i = 1; i < hull_faces; i++)
 			{
 				face_alloc[i - 1].next = face_alloc + i;
 				face_alloc[i].flags = 0;
@@ -822,7 +824,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				first_internal_vert = 0;
 				out_boundary_verts = points;
 
-				for (I j = 1; j < points; j++)
+				for (Integer j = 1; j < points; j++)
 					vert_alloc[j - 1].next = vert_alloc + vert_sub[j];
 				vert_alloc[points - 1].next = 0;
 
@@ -837,7 +839,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			Face *prev_p = 0;
 			Face *prev_q = 0;
 
-			for (I j = 2; j < i; j++)
+			for (Integer j = 2; j < i; j++)
 			{
 				Face *p = next_p;
 				p->v[0] = vert_alloc + vert_sub[0];
@@ -899,7 +901,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			Face *next_q = Face::Alloc(cache);
 			Face *prev_q = 0;
 
-			for (I j = 2; j < i; j++)
+			for (Integer j = 2; j < i; j++)
 			{
 				Face *p = next_p;
 				p->v[0] = vert_alloc + vert_sub[0];
@@ -977,14 +979,14 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return points;
 	}
 
-	I Triangulate(I *other_faces, uint64_t* sort_stamp, I stop)
+	Integer Triangulate(Integer *other_faces, uint64_t* sort_stamp, Integer stop)
 	{
-		I i = 0;
+		Integer i = 0;
 		Face *hull = 0;
-		I hull_faces = 0;
+		Integer hull_faces = 0;
 		Face *cache = 0;
 
-		I points = Prepare(&i, &hull, &hull_faces, &cache, sort_stamp, stop);
+		Integer points = Prepare(&i, &hull, &hull_faces, &cache, sort_stamp, stop);
 		unique_points = points < 0 ? -points : points;
 		if (points <= 0)
 		{
@@ -1047,7 +1049,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							} dup;
 
 							std::sort(vert_alloc, vert_alloc + points, dup);
-							for (I d = 1; d < points; d++)
+							for (Integer d = 1; d < points; d++)
 							{
 								assert(vert_alloc[d - 1].x != vert_alloc[d].x ||
 									vert_alloc[d - 1].y != vert_alloc[d].y);
@@ -1064,8 +1066,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			// 2. DELETE VISIBLE FACES & ADD NEW ONES
 			//    (we also build silhouette (vertex loop) between visible & invisible faces)
 
-			I del = 0;
-			I add = 0;
+			Integer del = 0;
+			Integer add = 0;
 
 			// push first visible face onto stack (of visible faces)
 			Face *stack = f;
@@ -1185,18 +1187,18 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		assert(2 * i - 4 == hull_faces);
 #endif
 
-		for (I j = 0; j < points; j++)
+		for (Integer j = 0; j < points; j++)
 		{
 			vert_alloc[j].next = 0;
 			vert_alloc[j].sew = 0;
 		}
 
-		I others = 0;
+		Integer others = 0;
 
 		i = 0;
 		Face **prev_dela = &first_dela_face;
 		Face **prev_hull = &first_hull_face;
-		for (I j = 0; j < hull_faces; j++)
+		for (Integer j = 0; j < hull_faces; j++)
 		{
 			Face *f = face_alloc + j;
 
@@ -1275,7 +1277,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		// link all other verts into internal list
 		first_internal_vert = 0;
 		Vert **prev_inter = &first_internal_vert;
-		for (I j = 0; j < points; j++)
+		for (Integer j = 0; j < points; j++)
 		{
 			if (!vert_alloc[j].next)
 			{
@@ -1291,7 +1293,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return 3 * i;
 	}
 
-	bool ReallocVerts(I points)
+	bool ReallocVerts(Integer points)
 	{
 		inp_verts = points;
 		out_verts = 0;
@@ -1328,7 +1330,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			vert_alloc = (Vert *)malloc(sizeof(Vert) * points);
 
 			if (vert_alloc)
-				vert_map = (I *)malloc(sizeof(I) * (size_t)points);
+				vert_map = (Integer *)malloc(sizeof(Integer) * (size_t)points);
 
 			if (vert_alloc && vert_map)
 				max_verts = points;
@@ -1398,8 +1400,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				return list; // ab is already there
 			}
 
-			T a0b = predicates::adaptive::orient2d(va->x, va->y, v0->x, v0->y, vb->x, vb->y);
-			T a1b = predicates::adaptive::orient2d(va->x, va->y, v1->x, v1->y, vb->x, vb->y);
+			Scalar a0b = predicates::adaptive::orient2d(va->x, va->y, v0->x, v0->y, vb->x, vb->y);
+			Scalar a1b = predicates::adaptive::orient2d(va->x, va->y, v1->x, v1->y, vb->x, vb->y);
 
 			if (a0b <= 0 && a1b >= 0)
 			{
@@ -1500,7 +1502,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			}
 
 			// is vr above or below ab ?
-			T abr = predicates::adaptive::orient2d(va->x, va->y, vb->x, vb->y, vr->x, vr->y);
+			Scalar abr = predicates::adaptive::orient2d(va->x, va->y, vb->x, vb->y, vr->x, vr->y);
 
 			if (abr == 0)
 			{
@@ -1591,17 +1593,17 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return false;
 	}
 
-	virtual I ConstrainEdges(I edges, const I *pa, const I *pb, size_t advance_bytes)
+	virtual Integer ConstrainEdges(Integer edges, const Integer *pa, const Integer *pb, size_t advance_bytes)
 	{
 		if (advance_bytes == 0)
-			advance_bytes = 2 * sizeof(I);
+			advance_bytes = 2 * sizeof(Integer);
 
 		int unfixed = 0;
 
 		uint64_t time0 = uSec();
 
 		int pro = 0;
-		for (I con = 0; con < edges; con++)
+		for (Integer con = 0; con < edges; con++)
 		{
 			if (con >= pro)
 			{
@@ -1615,8 +1617,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 					errlog_proc(errlog_file, "\r[%2d%s] constraining ", p, p >= 100 ? "" : "%");
 			}
 
-			I a = *(const I *)((const char *)pa + (intptr_t)con * advance_bytes);
-			I b = *(const I *)((const char *)pb + (intptr_t)con * advance_bytes);
+			Integer a = *(const Integer *)((const char *)pa + (intptr_t)con * advance_bytes);
+			Integer b = *(const Integer *)((const char *)pb + (intptr_t)con * advance_bytes);
 
 			if (!first_dela_face || a == b)
 				continue;
@@ -1726,8 +1728,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 					Vert *vr = (Vert *)(F->v[d]);
 
 					// is v,v0,vr,v1 a convex quad?
-					T v0r = predicates::adaptive::orient2d(v->x, v->y, v0->x, v0->y, vr->x, vr->y);
-					T v1r = predicates::adaptive::orient2d(v->x, v->y, v1->x, v1->y, vr->x, vr->y);
+					Scalar v0r = predicates::adaptive::orient2d(v->x, v->y, v0->x, v0->y, vr->x, vr->y);
+					Scalar v1r = predicates::adaptive::orient2d(v->x, v->y, v1->x, v1->y, vr->x, vr->y);
 
 					if (v0r >= 0 || v1r <= 0)
 					{
@@ -1918,8 +1920,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 						else
 						{
 							// check if v and vr are on the same side of a--b
-							T abv = predicates::adaptive::orient2d(va->x, va->y, vb->x, vb->y, v->x, v->y);
-							T abr = predicates::adaptive::orient2d(va->x, va->y, vb->x, vb->y, vr->x, vr->y);
+							Scalar abv = predicates::adaptive::orient2d(va->x, va->y, vb->x, vb->y, v->x, v->y);
+							Scalar abr = predicates::adaptive::orient2d(va->x, va->y, vb->x, vb->y, vr->x, vr->y);
 
 							if (abv >= 0 && abr >= 0 || abv <= 0 && abr <= 0)
 							{
@@ -2136,10 +2138,10 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		}
 
 		// clean up the mess we've made with dela faces list !!!
-		I hull_faces = 2 * unique_points - 4;
+		Integer hull_faces = 2 * unique_points - 4;
 		Face **tail = &first_dela_face;
-		I index = 0;
-		for (I i = 0; i < hull_faces; i++)
+		Integer index = 0;
+		for (Integer i = 0; i < hull_faces; i++)
 		{
 			if (face_alloc[i].IsDelaunay())
 			{
@@ -2162,7 +2164,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return polygons;
 	}
 
-	virtual I FloodFill(bool invert, const typename IDelaBella2<T, I>::Simplex **exterior, int depth)
+	virtual Integer FloodFill(bool invert, const typename SDB::Simplex **exterior, int depth)
 	{
 		if (!first_dela_face)
 			return 0;
@@ -2175,8 +2177,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		if (depth <= 0)
 			depth = -1;
 
-		const I marker = -1;
-		const I seeded = -2;
+		const Integer marker = -1;
+		const Integer seeded = -2;
 		uint8_t fill = invert ? 0b01000000 : 0;
 
 		// 0. seed list with boundary faces
@@ -2397,7 +2399,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 		polygons = out_verts / 3;
 
-		I faces = polygons + out_hull_faces;
+		Integer faces = polygons + out_hull_faces;
 
 		first_hull_face = 0;
 		first_dela_face = 0;
@@ -2405,11 +2407,11 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		Face *last_interior_face = 0;
 		Face *first_exterior_face = 0;
 
-		I interior = 0;
+		Integer interior = 0;
 
 		// index
-		I dela = 0;
-		I hull = 0;
+		Integer dela = 0;
+		Integer hull = 0;
 
 		for (int i = 0; i < faces; i++)
 		{
@@ -2466,16 +2468,16 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return interior;
 	}
 
-	virtual I Polygonize(const typename IDelaBella2<T, I>::Simplex *poly[])
+	virtual Integer Polygonize(const typename SDB::Simplex *poly[])
 	{
-		const I marker = (I)(-1);
+		const Integer marker = (Integer)(-1);
 
 		uint64_t time0 = uSec();
 		Face **buf = 0;
 		if (!poly)
 		{
 			buf = (Face **)malloc(sizeof(Face *) * (size_t)out_verts / 3);
-			poly = (const typename IDelaBella2<T, I>::Simplex **)buf;
+			poly = (const typename SDB::Simplex **)buf;
 			if (!poly)
 				return -1;
 		}
@@ -2488,11 +2490,11 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			f = (Face *)f->next;
 		}
 
-		I num = 0;
+		Integer num = 0;
 		f = first_dela_face;
 		int pro = 0;
-		I faces = out_verts / 3;
-		I i = 0;
+		Integer faces = out_verts / 3;
+		Integer i = 0;
 		while (f)
 		{
 			if (i >= pro)
@@ -2520,7 +2522,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 				Face *a = (Face *)f->f[i];
 
-				I index = a->index;
+				Integer index = a->index;
 
 				if (index != marker && a->IsDelaunay())
 				{
@@ -2534,7 +2536,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 					if (j == 3)
 					{
-						I dest = f->index;
+						Integer dest = f->index;
 						if (dest != marker)
 						{
 							// merging polys !!!
@@ -2601,7 +2603,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		// thay can form fan or strip or arbitraty mix of both
 		// without changing existing edges!
 
-		for (I p = num - 1; p >= 0; p--)
+		for (Integer p = num - 1; p >= 0; p--)
 		{
 			Face *f = (Face *)(poly[p]);
 			if (!f->next)
@@ -2758,7 +2760,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return num;
 	}
 
-	virtual I Triangulate(I points, const T *x, const T *y, size_t advance_bytes, I stop)
+	virtual Integer Triangulate(Integer points, const Scalar *x, const Scalar *y, size_t advance_bytes, Integer stop)
 	{
 		uint64_t sort_stamp = uSec();
 
@@ -2766,7 +2768,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		// const size_t max_voronoi_edge_indices = (size_t)points * 6 - 12;
 		const size_t max_voronoi_poly_indices = (size_t)points * 7 - 9; // winner of shame!
 
-		if (max_voronoi_poly_indices > (size_t)std::numeric_limits<I>::max())
+		if (max_voronoi_poly_indices > (size_t)std::numeric_limits<Integer>::max())
 		{
 			if (errlog_proc)
 				errlog_proc(errlog_file, "[ERR] index type too small for provided number of points!\n");
@@ -2779,8 +2781,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		if (!y)
 			y = x + 1;
 
-		if (advance_bytes < sizeof(T) * 2)
-			advance_bytes = sizeof(T) * 2;
+		if (advance_bytes < sizeof(Scalar) * 2)
+			advance_bytes = sizeof(Scalar) * 2;
 
 		if (!ReallocVerts(points))
 			return 0;
@@ -2788,36 +2790,36 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		if (errlog_proc)
 			errlog_proc(errlog_file, "[...] sorting vertices ");
 
-		for (I i = 0; i < points; i++)
+		for (Integer i = 0; i < points; i++)
 		{
 			Vert* v = vert_alloc + i;
 			v->i = i;
-			v->x = *(const T*)((const char*)x + i * advance_bytes);
-			v->y = *(const T*)((const char*)y + i * advance_bytes);
+			v->x = *(const Scalar*)((const char*)x + i * advance_bytes);
+			v->y = *(const Scalar*)((const char*)y + i * advance_bytes);
 		}
 
 		struct KD
 		{
-			const T xx, xy;
-			const T yx, yy;
+			const Scalar xx, xy;
+			const Scalar yx, yy;
 
-			I pro, acc, tot;
+			Integer pro, acc, tot;
 			int (* const errlog_proc)(void *file, const char *fmt, ...);
 			void * const errlog_file;
 
-			T bbox[4];
+			Scalar bbox[4];
 
-			T X(const Vert& v) const
+			Scalar X(const Vert& v) const
 			{
 				return v.x * xx + v.y * xy;
 			}
 
-			T Y(const Vert& v) const
+			Scalar Y(const Vert& v) const
 			{
 				return v.x * yx + v.y * yy;
 			}
 
-			void Progress(I n)
+			void Progress(Integer n)
 			{
 				acc += n;
 				if (acc >= pro)
@@ -2835,7 +2837,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 				}
 			}
 
-			bool Split(Vert* v, I n)
+			bool Split(Vert* v, Integer n)
 			{
 				const int limit = 256;
 
@@ -2844,7 +2846,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 					struct
 					{
 						Vert* v;
-						I n;
+						Integer n;
 					} sub[limit];
 					Stk* pop;
 					Stk* push;
@@ -2876,10 +2878,10 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 					bbox[0] = bbox[1] = X(v[0]);
 					bbox[2] = bbox[3] = Y(v[0]);
-					for (I i = 1; i < n; i++)
+					for (Integer i = 1; i < n; i++)
 					{
-						T x = X(v[i]);
-						T y = Y(v[i]);
+						Scalar x = X(v[i]);
+						Scalar y = Y(v[i]);
 						bbox[0] = std::min(bbox[0], x);
 						bbox[1] = std::max(bbox[1], x);
 						bbox[2] = std::min(bbox[2], y);
@@ -2888,15 +2890,15 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 					if (bbox[1] - bbox[0] >= bbox[3] - bbox[2] && bbox[0] < bbox[1])
 					{
-						T half = (bbox[1] + bbox[0]) / 2;
+						Scalar half = (bbox[1] + bbox[0]) / 2;
 						if (half == bbox[0])
 							half = bbox[1];
 
 						Vert* u = v;
-						T temp = X(v[0]);
+						Scalar temp = X(v[0]);
 						for (int i = 0; i < n; i++)
 						{
-							T vx = X(v[i]);
+							Scalar vx = X(v[i]);
 							if (vx >= half)
 							{
 								u = v + i;
@@ -2908,14 +2910,14 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 						struct
 						{
-							T X(const Vert& v) const
+							Scalar X(const Vert& v) const
 							{
 								return v.x * xx + v.y * xy;
 							}
 							bool operator () (const Vert& a, const Vert& b) const
 							{
-								const T ax = X(a);
-								const T bx = X(b);
+								const Scalar ax = X(a);
+								const Scalar bx = X(b);
 								if (ax == bx)
 								{
 									if (a.x == b.x)
@@ -2926,7 +2928,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							}
 							bool operator () (const Vert& v) const
 							{
-								const T vx = X(v);
+								const Scalar vx = X(v);
 								if (vx == t)
 								{
 									if (v.x == u.x)
@@ -2938,8 +2940,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 								// return X(v) < t;
 							}
 							const Vert& u;
-							const T t;
-							const T xx, xy;
+							const Scalar t;
+							const Scalar xx, xy;
 						} p = { *u, half,xx,xy };
 
 						if (bbox[2] == bbox[3] || n == 2)
@@ -3009,9 +3011,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							stack = stack->push;
 						}
 					
-						//Split(v, (I)(u - v));
+						//Split(v, (Integer)(u - v));
 						stack->sub[depth].v = v;
-						stack->sub[depth].n = (I)(u - v);
+						stack->sub[depth].n = (Integer)(u - v);
 						depth++;
 
 						if (depth == limit)
@@ -3029,9 +3031,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							stack = stack->push;
 						}
 
-						//Split(u, n - (I)(u - v));
+						//Split(u, n - (Integer)(u - v));
 						stack->sub[depth].v = u;
-						stack->sub[depth].n = n - (I)(u - v);
+						stack->sub[depth].n = n - (Integer)(u - v);
 						depth++;
 
 						continue;
@@ -3039,15 +3041,15 @@ struct CDelaBella2 : IDelaBella2<T, I>
 					else
 					if (bbox[2] < bbox[3])
 					{
-						T half = (bbox[3] + bbox[2]) / 2;
+						Scalar half = (bbox[3] + bbox[2]) / 2;
 						if (half == bbox[2])
 							half = bbox[3];
 
 						Vert* u = v;
-						T temp = Y(v[0]);
+						Scalar temp = Y(v[0]);
 						for (int i = 0; i < n; i++)
 						{
-							T vy = Y(v[i]);
+							Scalar vy = Y(v[i]);
 							if (vy >= half)
 							{
 								u = v + i;
@@ -3059,14 +3061,14 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 						struct
 						{
-							T Y(const Vert& v) const
+							Scalar Y(const Vert& v) const
 							{
 								return v.x * yx + v.y * yy;
 							}
 							bool operator () (const Vert& a, const Vert& b) const
 							{
-								const T ay = Y(a);
-								const T by = Y(b);
+								const Scalar ay = Y(a);
+								const Scalar by = Y(b);
 								if (ay == by)
 								{
 									if (a.y == b.y)
@@ -3077,7 +3079,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							}
 							bool operator () (const Vert& v) const
 							{
-								const T vy = Y(v);
+								const Scalar vy = Y(v);
 								if (vy == t)
 								{
 									if (v.y == u.y)
@@ -3089,8 +3091,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 								//return Y(v) < t;
 							}
 							const Vert& u;
-							const T t;
-							const T yx, yy;
+							const Scalar t;
+							const Scalar yx, yy;
 						} p = { *u,half,yx,yy };
 
 						if (bbox[0] == bbox[1] || n == 2)
@@ -3165,9 +3167,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							stack = stack->push;
 						}
 
-						//Split(v, (I)(u - v));
+						//Split(v, (Integer)(u - v));
 						stack->sub[depth].v = v;
-						stack->sub[depth].n = (I)(u - v);
+						stack->sub[depth].n = (Integer)(u - v);
 						depth++;
 
 						if (depth == limit)
@@ -3185,9 +3187,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 							stack = stack->push;
 						}
 
-						//Split(u, n - (I)(u - v));
+						//Split(u, n - (Integer)(u - v));
 						stack->sub[depth].v = u;
-						stack->sub[depth].n = n - (I)(u - v);
+						stack->sub[depth].n = n - (Integer)(u - v);
 						depth++;
 
 						continue;
@@ -3246,9 +3248,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			}
 		};
 
-		KD kd = { (T)2, (T)1, (T)-1, (T)2, 0,0,points, errlog_proc, errlog_file };
+		KD kd = { (Scalar)2, (Scalar)1, (Scalar)-1, (Scalar)2, 0,0,points, errlog_proc, errlog_file };
 
-		// KD kd = { (T)1.1, (T)0.1, (T)-0.1, (T)1.1 }; // robustenss test
+		// KD kd = { (Scalar)1.1, (Scalar)0.1, (Scalar)-0.1, (Scalar)1.1 }; // robustenss test
 		if (!kd.Split(vert_alloc, points))
 		{
 			if (errlog_proc)
@@ -3259,16 +3261,16 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		#if 0
 		exit(0);
 
-		T xlo, xhi, ylo, yhi;
+		Scalar xlo, xhi, ylo, yhi;
 		xlo = xhi = *x;
 		ylo = yhi = *y;
 
-		for (I i = 0; i < points; i++)
+		for (Integer i = 0; i < points; i++)
 		{
 			Vert* v = vert_alloc + i;
 			v->i = i;
-			v->x = *(const T *)((const char *)x + i * advance_bytes);
-			v->y = *(const T *)((const char *)y + i * advance_bytes);
+			v->x = *(const Scalar *)((const char *)x + i * advance_bytes);
+			v->y = *(const Scalar *)((const char *)y + i * advance_bytes);
 
 			xlo = std::min(xlo,v->x);
 			ylo = std::min(ylo,v->y);
@@ -3277,8 +3279,8 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		}
 
 		// todo: scale up more robust!
-		T xr = (xhi - xlo) / 2;
-		T yr = (yhi - ylo) / 2;
+		Scalar xr = (xhi - xlo) / 2;
+		Scalar yr = (yhi - ylo) / 2;
 
 		xlo -= xr;
 		xhi += xr;
@@ -3318,59 +3320,59 @@ struct CDelaBella2 : IDelaBella2<T, I>
 	}
 
 	// num of points passed to last call to Triangulate()
-	virtual I GetNumInputPoints() const
+	virtual Integer GetNumInputPoints() const
 	{
 		return inp_verts;
 	}
 
 	// num of verts returned from last call to Triangulate()
-	virtual I GetNumOutputIndices() const
+	virtual Integer GetNumOutputIndices() const
 	{
 		return out_verts;
 	}
 
-	virtual I GetNumOutputHullFaces() const
+	virtual Integer GetNumOutputHullFaces() const
 	{
 		return out_hull_faces;
 	}
 
-	virtual I GetNumBoundaryVerts() const
+	virtual Integer GetNumBoundaryVerts() const
 	{
 		return out_verts < 0 ? -out_verts : out_boundary_verts;
 	}
 
-	virtual I GetNumInternalVerts() const
+	virtual Integer GetNumInternalVerts() const
 	{
 		return out_verts < 0 ? 0 : unique_points - out_boundary_verts;
 	}
 
 	// num of polygons
-	virtual I GetNumPolygons() const
+	virtual Integer GetNumPolygons() const
 	{
 		return polygons;
 	}
 
-	virtual const typename IDelaBella2<T, I>::Simplex *GetFirstDelaunaySimplex() const
+	virtual const typename SDB::Simplex *GetFirstDelaunaySimplex() const
 	{
 		return first_dela_face;
 	}
 
-	virtual const typename IDelaBella2<T, I>::Simplex *GetFirstHullSimplex() const
+	virtual const typename SDB::Simplex *GetFirstHullSimplex() const
 	{
 		return first_hull_face;
 	}
 
-	virtual const typename IDelaBella2<T, I>::Vertex *GetFirstBoundaryVertex() const
+	virtual const typename SDB::Vertex *GetFirstBoundaryVertex() const
 	{
 		return first_boundary_vert;
 	}
 
-	virtual const typename IDelaBella2<T, I>::Vertex *GetFirstInternalVertex() const
+	virtual const typename SDB::Vertex *GetFirstInternalVertex() const
 	{
 		return first_internal_vert;
 	}
 
-	virtual const typename IDelaBella2<T, I>::Vertex *GetVertexByIndex(I i) const
+	virtual const typename SDB::Vertex *GetVertexByIndex(Integer i) const
 	{
 		if (i < 0 || i >= inp_verts)
 			return 0;
@@ -3383,66 +3385,66 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		errlog_file = stream;
 	}
 
-	virtual I GenVoronoiDiagramVerts(T *x, T *y, size_t advance_bytes) const
+	virtual Integer GenVoronoiDiagramVerts(Scalar *x, Scalar *y, size_t advance_bytes) const
 	{
 		if (!first_dela_face)
 			return 0;
 
-		const I polys = polygons;
-		const I contour = out_boundary_verts;
-		I ret = polys + contour;
+		const Integer polys = polygons;
+		const Integer contour = out_boundary_verts;
+		Integer ret = polys + contour;
 
 		if (!x || !y)
 			return ret;
 
-		if (advance_bytes < sizeof(T) * 2)
-			advance_bytes = sizeof(T) * 2;
+		if (advance_bytes < sizeof(Scalar) * 2)
+			advance_bytes = sizeof(Scalar) * 2;
 
 		const Face *f = first_dela_face;
 		while (f)
 		{
-			const T v1x = f->v[1]->x - f->v[0]->x;
-			const T v1y = f->v[1]->y - f->v[0]->y;
-			const T v2x = f->v[2]->x - f->v[0]->x;
-			const T v2y = f->v[2]->y - f->v[0]->y;
+			const Scalar v1x = f->v[1]->x - f->v[0]->x;
+			const Scalar v1y = f->v[1]->y - f->v[0]->y;
+			const Scalar v2x = f->v[2]->x - f->v[0]->x;
+			const Scalar v2y = f->v[2]->y - f->v[0]->y;
 
-			const T v11 = v1x * v1x + v1y * v1y;
-			const T v22 = v2x * v2x + v2y * v2y;
-			const T v12 = (v1x * v2y - v1y * v2x) * 2;
+			const Scalar v11 = v1x * v1x + v1y * v1y;
+			const Scalar v22 = v2x * v2x + v2y * v2y;
+			const Scalar v12 = (v1x * v2y - v1y * v2x) * 2;
 
-			T cx = f->v[0]->x + (v2y * v11 - v1y * v22) / v12;
-			T cy = f->v[0]->y + (v1x * v22 - v2x * v11) / v12;
+			Scalar cx = f->v[0]->x + (v2y * v11 - v1y * v22) / v12;
+			Scalar cy = f->v[0]->y + (v1x * v22 - v2x * v11) / v12;
 
 			// yes, for polys < tris
 			// we possibly calc it multiple times
 			// and overwrite already calculated centers
 			size_t offs = advance_bytes * (size_t)f->index;
-			*(T *)((char *)x + offs) = cx;
-			*(T *)((char *)y + offs) = cy;
+			*(Scalar *)((char *)x + offs) = cx;
+			*(Scalar *)((char *)y + offs) = cy;
 
 			f = (Face *)f->next;
 		}
 
 		{
 			size_t offs = advance_bytes * (size_t)polys;
-			x = (T *)((char *)x + offs);
-			y = (T *)((char *)y + offs);
+			x = (Scalar *)((char *)x + offs);
+			y = (Scalar *)((char *)y + offs);
 		}
 
 		Vert *prev = first_boundary_vert;
 		Vert *vert = (Vert *)prev->next;
-		for (I i = 0; i < contour; i++)
+		for (Integer i = 0; i < contour; i++)
 		{
-			T nx = prev->y - vert->y;
-			T ny = vert->x - prev->x;
+			Scalar nx = prev->y - vert->y;
+			Scalar ny = vert->x - prev->x;
 
-			T nn = 1 / sqrt(nx * nx + ny * ny);
+			Scalar nn = 1 / sqrt(nx * nx + ny * ny);
 			nx *= nn;
 			ny *= nn;
 
 			size_t offs = advance_bytes * (size_t)i;
-			*(T *)((char *)x + offs) = nx;
-			*(T *)((char *)y + offs) = ny;
+			*(Scalar *)((char *)x + offs) = nx;
+			*(Scalar *)((char *)y + offs) = ny;
 
 			prev = vert;
 			vert = (Vert *)vert->next;
@@ -3451,56 +3453,56 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return ret;
 	}
 
-	virtual I GenVoronoiDiagramEdges(I *indices, size_t advance_bytes) const
+	virtual Integer GenVoronoiDiagramEdges(Integer *indices, size_t advance_bytes) const
 	{
 		if (!first_dela_face)
 			return 0;
 
-		const I polys = polygons;
-		const I verts = unique_points;
-		I ret = 2 * (verts + polys - 1);
+		const Integer polys = polygons;
+		const Integer verts = unique_points;
+		Integer ret = 2 * (verts + polys - 1);
 
 		if (!indices)
 			return ret;
 
-		if (advance_bytes < sizeof(I))
-			advance_bytes = sizeof(I);
+		if (advance_bytes < sizeof(Integer))
+			advance_bytes = sizeof(Integer);
 
-		const I contour = out_boundary_verts;
-		const I inter = verts - contour;
+		const Integer contour = out_boundary_verts;
+		const Integer inter = verts - contour;
 
-		I *idx = indices;
+		Integer *idx = indices;
 
 		Vert *vert = first_internal_vert;
-		for (I i = 0; i < inter; i++)
+		for (Integer i = 0; i < inter; i++)
 		{
 			Iter it;
 			Face *t = (Face *)vert->StartIterator(&it);
 			Face *e = t;
 
-			I a = t->index; // begin
+			Integer a = t->index; // begin
 			do
 			{
-				I b = t->index;
+				Integer b = t->index;
 				if (a < b)
 				{
 					*idx = a;
-					idx = (I *)((char *)idx + advance_bytes);
+					idx = (Integer *)((char *)idx + advance_bytes);
 					*idx = b;
-					idx = (I *)((char *)idx + advance_bytes);
+					idx = (Integer *)((char *)idx + advance_bytes);
 				}
 				a = b;
 				t = (Face *)it.Next();
 			} while (t != e);
 
 			// loop closing seg
-			I b = t->index;
+			Integer b = t->index;
 			if (a < b)
 			{
 				*idx = a;
-				idx = (I *)((char *)idx + advance_bytes);
+				idx = (Integer *)((char *)idx + advance_bytes);
 				*idx = b;
-				idx = (I *)((char *)idx + advance_bytes);
+				idx = (Integer *)((char *)idx + advance_bytes);
 			}
 			a = b;
 
@@ -3509,9 +3511,9 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 		Vert *prev = first_boundary_vert;
 		vert = (Vert *)prev->next;
-		for (I i = 0; i < contour; i++)
+		for (Integer i = 0; i < contour; i++)
 		{
-			I a = i + polys; // begin
+			Integer a = i + polys; // begin
 
 			// iterate all dela faces around prev
 			// add their voro-vert index == dela face index
@@ -3534,27 +3536,27 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			// now iterate around, till we're inside the boundary
 			while (t->IsDelaunay())
 			{
-				I b = t->index;
+				Integer b = t->index;
 
 				if (a < b)
 				{
 					*idx = a;
-					idx = (I *)((char *)idx + advance_bytes);
+					idx = (Integer *)((char *)idx + advance_bytes);
 					*idx = b;
-					idx = (I *)((char *)idx + advance_bytes);
+					idx = (Integer *)((char *)idx + advance_bytes);
 				}
 				a = b;
 
 				t = (Face *)it.Next();
 			}
 
-			I b = (i == 0 ? contour - 1 : i - 1) + polys; // loop-wrapping!
+			Integer b = (i == 0 ? contour - 1 : i - 1) + polys; // loop-wrapping!
 			if (a < b)
 			{
 				*idx = a;
-				idx = (I *)((char *)idx + advance_bytes);
+				idx = (Integer *)((char *)idx + advance_bytes);
 				*idx = b;
-				idx = (I *)((char *)idx + advance_bytes);
+				idx = (Integer *)((char *)idx + advance_bytes);
 			}
 			a = b;
 
@@ -3569,30 +3571,30 @@ struct CDelaBella2 : IDelaBella2<T, I>
 		return ret;
 	}
 
-	virtual I GenVoronoiDiagramPolys(I *indices, size_t advance_bytes, I *closed_indices) const
+	virtual Integer GenVoronoiDiagramPolys(Integer *indices, size_t advance_bytes, Integer *closed_indices) const
 	{
 		if (!first_dela_face)
 			return 0;
 
-		const I polys = polygons;
-		const I contour = out_boundary_verts;
-		const I verts = unique_points;
-		I ret = 3 * verts + 2 * (polys - 1) + contour;
+		const Integer polys = polygons;
+		const Integer contour = out_boundary_verts;
+		const Integer verts = unique_points;
+		Integer ret = 3 * verts + 2 * (polys - 1) + contour;
 
 		if (!indices)
 			return ret;
 
-		if (advance_bytes < sizeof(I))
-			advance_bytes = sizeof(I);
+		if (advance_bytes < sizeof(Integer))
+			advance_bytes = sizeof(Integer);
 
-		const I inter = verts - contour;
-		const I poly_ending = ~0;
+		const Integer inter = verts - contour;
+		const Integer poly_ending = ~0;
 
-		I *idx = indices;
+		Integer *idx = indices;
 
-		I closed = 0;
+		Integer closed = 0;
 		Vert *vert = first_internal_vert;
-		for (I i = 0; i < inter; i++)
+		for (Integer i = 0; i < inter; i++)
 		{
 			Iter it;
 			Face *t = (Face *)vert->StartIterator(&it);
@@ -3600,18 +3602,18 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 			do
 			{
-				I a = t->index;
+				Integer a = t->index;
 				*idx = a;
-				idx = (I *)((char *)idx + advance_bytes);
+				idx = (Integer *)((char *)idx + advance_bytes);
 				closed++;
 
 				t = (Face *)it.Next();
 			} while (t != e);
 
 			// loop closing seg
-			I a = poly_ending;
+			Integer a = poly_ending;
 			*idx = a;
-			idx = (I *)((char *)idx + advance_bytes);
+			idx = (Integer *)((char *)idx + advance_bytes);
 			closed++;
 
 			vert = (Vert *)vert->next;
@@ -3622,11 +3624,11 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 		Vert *prev = first_boundary_vert;
 		vert = (Vert *)prev->next;
-		for (I i = 0; i < contour; i++)
+		for (Integer i = 0; i < contour; i++)
 		{
-			I a = i + polys; // begin
+			Integer a = i + polys; // begin
 			*idx = a;
-			idx = (I *)((char *)idx + advance_bytes);
+			idx = (Integer *)((char *)idx + advance_bytes);
 
 			// iterate all dela faces around prev
 			// add their voro-vert index == dela face index
@@ -3649,20 +3651,20 @@ struct CDelaBella2 : IDelaBella2<T, I>
 			// now iterate around, till we're inside the boundary
 			while (t->IsDelaunay())
 			{
-				I a = t->index;
+				Integer a = t->index;
 				*idx = a;
-				idx = (I *)((char *)idx + advance_bytes);
+				idx = (Integer *)((char *)idx + advance_bytes);
 
 				t = (Face *)it.Next();
 			}
 
 			a = (i == 0 ? contour - 1 : i - 1) + polys; // loop-wrapping!
 			*idx = a;
-			idx = (I *)((char *)idx + advance_bytes);
+			idx = (Integer *)((char *)idx + advance_bytes);
 
 			a = poly_ending;
 			*idx = a;
-			idx = (I *)((char *)idx + advance_bytes);
+			idx = (Integer *)((char *)idx + advance_bytes);
 
 			prev = vert;
 			vert = (Vert *)vert->next;
@@ -3678,7 +3680,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 	// private:
 	void CheckVert(Vert *v) const
 	{
-		I all_faces = out_hull_faces + out_verts / 3;
+		Integer all_faces = out_hull_faces + out_verts / 3;
 
 		assert(v - vert_alloc >= 0);
 		assert(v - vert_alloc < unique_points);
@@ -3700,7 +3702,7 @@ struct CDelaBella2 : IDelaBella2<T, I>
 
 	void CheckFace(Face *f) const
 	{
-		I all_faces = out_hull_faces + out_verts / 3;
+		Integer all_faces = out_hull_faces + out_verts / 3;
 
 		assert(f - face_alloc >= 0);
 		assert(f - face_alloc < all_faces);
@@ -3822,13 +3824,13 @@ struct CDelaBella2 : IDelaBella2<T, I>
 	}
 };
 
-template <typename T, typename I>
-IDelaBella2<T, I> *IDelaBella2<T, I>::Create()
+
+SDB *SDB::Create()
 {
-	IDelaBella2<T, I> *ret = 0;
+	SDB *ret = 0;
 	try
 	{
-		ret = new CDelaBella2<T, I>;
+		ret = new CDelaBella2;
 	}
 	catch (...)
 	{
@@ -3837,26 +3839,29 @@ IDelaBella2<T, I> *IDelaBella2<T, I>::Create()
 	return ret;
 }
 
-template <typename T, typename I>
-const T CDelaBella2<T, I>::Face::iccerrboundA = ((T(10) + T(96) * std::exp2(-(T)std::numeric_limits<T>::digits)) * std::exp2(-(T)std::numeric_limits<T>::digits));
 
-template <typename T, typename I>
-const T CDelaBella2<T, I>::Vert::resulterrbound = (T(3) + T(8) * std::exp2(-(T)std::numeric_limits<T>::digits)) * std::exp2(-(T)std::numeric_limits<T>::digits);
+const Scalar CDelaBella2::Face::iccerrboundA = ((Scalar(10) + Scalar(96) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits));
 
-// this should cover all malcontents
-template IDelaBella2<float, int8_t> *IDelaBella2<float, int8_t>::Create();
-template IDelaBella2<double, int8_t> *IDelaBella2<double, int8_t>::Create();
-template IDelaBella2<long double, int8_t> *IDelaBella2<long double, int8_t>::Create();
 
-template IDelaBella2<float, int16_t> *IDelaBella2<float, int16_t>::Create();
-template IDelaBella2<double, int16_t> *IDelaBella2<double, int16_t>::Create();
-template IDelaBella2<long double, int16_t> *IDelaBella2<long double, int16_t>::Create();
+const Scalar CDelaBella2::Vert::resulterrbound = (Scalar(3) + Scalar(8) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits)) * std::exp2(-(Scalar)std::numeric_limits<Scalar>::digits);
 
-template IDelaBella2<float, int32_t> *IDelaBella2<float, int32_t>::Create();
-template IDelaBella2<double, int32_t> *IDelaBella2<double, int32_t>::Create();
-template IDelaBella2<long double, int32_t> *IDelaBella2<long double, int32_t>::Create();
+//// this should cover all malcontents
+//template SDB<float, int8_t> *SDB<float, int8_t>::Create();
+//template SDB<double, int8_t> *SDB<double, int8_t>::Create();
+//template SDB<long double, int8_t> *SDB<long double, int8_t>::Create();
+//
+//template SDB<float, int16_t> *SDB<float, int16_t>::Create();
+//template SDB<double, int16_t> *SDB<double, int16_t>::Create();
+//template SDB<long double, int16_t> *SDB<long double, int16_t>::Create();
+//
+//template SDB<float, int32_t> *SDB<float, int32_t>::Create();
+//template SDB<double, int32_t> *SDB<double, int32_t>::Create();
+//template SDB<long double, int32_t> *SDB<long double, int32_t>::Create();
+//
+//template SDB<float, int64_t> *SDB<float, int64_t>::Create();
+//template SDB<double, int64_t> *SDB<double, int64_t>::Create();
+//template SDB<long double, int64_t> *SDB<long double, int64_t>::Create();
 
-template IDelaBella2<float, int64_t> *IDelaBella2<float, int64_t>::Create();
-template IDelaBella2<double, int64_t> *IDelaBella2<double, int64_t>::Create();
-template IDelaBella2<long double, int64_t> *IDelaBella2<long double, int64_t>::Create();
-
+#ifdef __cplusplus
+}
+#endif
